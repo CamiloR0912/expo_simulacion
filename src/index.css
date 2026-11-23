@@ -1,0 +1,771 @@
+/* Presentación de «Cuarentena». Mundo visual del juego: fondo tinta y asfalto, el color como información
+   (azul = sanos, rojo = infectados, blanco = recuperados, ámbar = umbral y avisos, verde = lo que logra el jugador).
+   Todo se dibuja sobre un escenario de 1920×1080 que se escala a la ventana, así que las medidas van en px. */
+
+@font-face {
+  font-family: 'Pixel Operator';
+  src: url('./assets/fuentes/PixelOperator.ttf') format('truetype');
+  font-weight: 400;
+  font-display: block;
+}
+@font-face {
+  font-family: 'Pixel Operator';
+  src: url('./assets/fuentes/PixelOperator-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: block;
+}
+
+:root {
+  --tinta: #121417;
+  --asfalto: #2b2f33;
+  --concreto: #4a5058;
+  --niebla: #b4bac0;
+  --azul-frio: #3b5a75;
+  --azul: #4fa3d1;
+  --rojo: #e0503f;
+  --blanco: #eaf2f5;
+  --ambar: #e0a030;
+  --verde: #b5c95a;
+  --pixel: 'Pixel Operator', monospace;
+  --texto: 'Source Sans 3 Variable', 'Segoe UI', sans-serif;
+  --banda: 150px;
+  --suave: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: #07080a;
+  color: var(--blanco);
+  font-family: var(--texto);
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--azul);
+  color: var(--tinta);
+}
+
+:focus-visible {
+  outline: 4px solid var(--ambar);
+  outline-offset: 4px;
+}
+
+.marco {
+  position: fixed;
+  inset: 0;
+}
+
+.escenario {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1920px;
+  height: 1080px;
+  background: var(--tinta);
+  overflow: hidden;
+  transform-origin: center;
+}
+
+/* ------------------------------------------------------------------------------------------ diapositiva */
+
+.diapositiva {
+  position: absolute;
+  inset: 0 0 var(--banda) 0;
+  padding: 76px 96px 56px;
+  animation: entrar 0.45s var(--suave);
+}
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+h1 {
+  font-family: var(--pixel);
+  font-weight: 700;
+  font-size: 92px;
+  line-height: 0.98;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+h2 {
+  font-family: var(--pixel);
+  font-weight: 700;
+  font-size: 48px;
+  line-height: 1.05;
+}
+
+p,
+li,
+dd,
+td,
+figcaption {
+  font-size: 40px;
+  line-height: 1.22;
+}
+
+.d-dos {
+  display: grid;
+  grid-template-columns: 760px 1fr;
+  column-gap: 72px;
+  align-items: center;
+}
+
+.d-ancha {
+  display: flex;
+  flex-direction: column;
+}
+
+.d-ancha > h1 + * {
+  margin-top: auto;
+}
+
+.d-ancha > :last-child {
+  margin-bottom: auto;
+}
+
+.d-dos h1 {
+  font-size: 80px;
+}
+
+.col-texto h1 {
+  margin-bottom: 26px;
+}
+
+.col-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.col-visual .captura {
+  width: 100%;
+  height: auto;
+}
+
+.entrada {
+  font-size: 40px;
+  color: var(--blanco);
+  margin-bottom: 28px;
+  max-width: 22em;
+}
+
+.puntos {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  row-gap: 30px;
+}
+
+.puntos li {
+  padding-left: 44px;
+  position: relative;
+}
+
+.puntos li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 16px;
+  width: 20px;
+  height: 20px;
+  background: var(--azul);
+}
+
+.nota {
+  margin-top: 36px;
+  color: var(--niebla);
+  font-size: 36px;
+}
+
+.captura {
+  display: block;
+  image-rendering: pixelated;
+  border: 6px solid var(--concreto);
+  background: var(--asfalto);
+}
+
+/* ecuaciones y ficha de validación de cada modelo */
+
+.ecuaciones {
+  background: var(--asfalto);
+  padding: 20px 28px;
+  display: grid;
+  row-gap: 8px;
+  margin-bottom: 26px;
+}
+
+.ecuaciones p {
+  font-size: 34px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: pre-wrap;
+}
+
+.ficha {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 28px;
+  row-gap: 14px;
+}
+
+.ficha dt {
+  font-family: var(--pixel);
+  font-size: 32px;
+  color: var(--ambar);
+  padding-top: 6px;
+}
+
+.ficha dd {
+  font-size: 32px;
+  color: var(--blanco);
+}
+
+/* ------------------------------------------------------------------------------------- simulaciones */
+
+.sim {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.lienzo,
+.grafica {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  border: 6px solid var(--concreto);
+  background: var(--tinta);
+}
+
+.rotulo-svg {
+  font-family: var(--pixel);
+  font-size: 26px;
+}
+
+.tres-rotulos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  font-family: var(--pixel);
+  font-size: 34px;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.controles {
+  display: flex;
+  gap: 14px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.opcion {
+  font-family: var(--pixel);
+  font-size: 32px;
+  color: var(--blanco);
+  background: var(--asfalto);
+  border: 4px solid var(--concreto);
+  padding: 8px 22px 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.opcion:hover {
+  border-color: var(--azul);
+}
+
+.opcion[aria-pressed='true'] {
+  background: var(--azul);
+  border-color: var(--azul);
+  color: var(--tinta);
+}
+
+.datos {
+  display: flex;
+  gap: 48px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.dato {
+  display: grid;
+}
+
+.dato-nombre {
+  font-family: var(--pixel);
+  font-size: 28px;
+  color: var(--niebla);
+}
+
+.dato-valor {
+  font-family: var(--pixel);
+  font-weight: 700;
+  font-size: 60px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.dato-teorico {
+  font-family: var(--pixel);
+  font-size: 28px;
+  color: var(--ambar);
+}
+
+/* ------------------------------------------------------------------------------------------- portada */
+
+.d-portada {
+  --banda: 360px;
+  padding: 0;
+}
+
+.portada-cielo,
+.portada-ciudad {
+  position: absolute;
+  inset: 0;
+  image-rendering: pixelated;
+  background: url('/juego/menu_bg_sky.png') 0 0 / 1920px 1080px no-repeat;
+}
+
+.portada-ciudad {
+  background: url('/juego/menu_bg_city.png') 0 100% / 4096px 1080px no-repeat;
+}
+
+.portada-ciudad::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--tinta) 45%, transparent);
+}
+
+.portada-logo {
+  position: absolute;
+  left: 84px;
+  top: 64px;
+  image-rendering: pixelated;
+}
+
+.portada-gancho {
+  position: absolute;
+  left: 96px;
+  top: 452px;
+  font-family: var(--pixel);
+  font-size: 56px;
+  line-height: 1.04;
+}
+
+.portada-gancho strong {
+  color: var(--verde);
+}
+
+.portada-pie {
+  position: absolute;
+  left: 96px;
+  bottom: 40px;
+  font-family: var(--pixel);
+  font-size: 40px;
+}
+
+.portada-pie span {
+  display: block;
+  font-size: 32px;
+  color: var(--ambar);
+  margin-top: 6px;
+}
+
+/* ------------------------------------------------------------------------------- historia y el juego */
+
+.d-ancha h1 {
+  margin-bottom: 24px;
+}
+
+.voces,
+.enemigos,
+.niveles {
+  display: grid;
+  column-gap: 56px;
+}
+
+.voces {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.voces h2,
+.enemigos h2,
+.niveles h2 {
+  margin: 24px 0 10px;
+}
+
+.retrato {
+  display: block;
+  width: 288px;
+  height: 288px;
+  background-size: 576px 288px;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  background-color: var(--azul-frio);
+  border: 6px solid var(--concreto);
+}
+
+.enemigos {
+  grid-template-columns: repeat(5, 1fr);
+  column-gap: 24px;
+  align-items: end;
+}
+
+.enemigos p {
+  color: var(--verde);
+  font-family: var(--pixel);
+  font-size: 36px;
+}
+
+.sprite {
+  display: block;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.ciclo {
+  list-style: none;
+  padding: 0;
+  counter-reset: paso;
+  display: grid;
+  row-gap: 16px;
+}
+
+.ciclo li {
+  counter-increment: paso;
+  background: var(--asfalto);
+  padding: 16px 28px 18px 92px;
+  position: relative;
+  font-family: var(--pixel);
+  font-size: 44px;
+}
+
+.ciclo li::before {
+  content: counter(paso);
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 68px;
+  display: grid;
+  place-items: center;
+  background: var(--azul);
+  color: var(--tinta);
+  font-weight: 700;
+}
+
+.ciclo li:last-child::before {
+  background: var(--verde);
+}
+
+.niveles {
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: 32px;
+}
+
+.niveles p {
+  font-size: 34px;
+  color: var(--niebla);
+}
+
+.par {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 48px;
+}
+
+.par figcaption {
+  margin-top: 18px;
+  font-size: 38px;
+}
+
+.controles-juego {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 96px;
+  row-gap: 22px;
+}
+
+.controles-juego div {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  align-items: center;
+  column-gap: 32px;
+}
+
+.controles-juego span {
+  font-size: 40px;
+}
+
+kbd {
+  font-family: var(--pixel);
+  font-weight: 700;
+  font-size: 40px;
+  color: var(--tinta);
+  background: var(--blanco);
+  padding: 8px 20px 10px;
+  text-align: center;
+  box-shadow: 0 6px 0 var(--concreto);
+}
+
+/* -------------------------------------------------------------------------------------------- tablas */
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla th {
+  font-family: var(--pixel);
+  font-size: 34px;
+  font-weight: 400;
+  color: var(--ambar);
+  text-align: left;
+  padding: 0 24px 16px 0;
+  border-bottom: 4px solid var(--concreto);
+}
+
+.tabla td {
+  padding: 18px 24px 18px 0;
+  border-bottom: 2px solid var(--asfalto);
+  font-size: 40px;
+}
+
+.tabla td:first-child {
+  font-weight: 600;
+}
+
+.tabla-numeros td:nth-child(n + 3),
+.tabla-numeros th:nth-child(n + 3) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla-numeros td:last-child {
+  color: var(--verde);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------------- diagrama de acople */
+
+.acople {
+  width: 100%;
+  height: auto;
+}
+
+.acople-titulo {
+  font-family: var(--pixel);
+  font-weight: 700;
+  font-size: 56px;
+}
+
+.acople-sub {
+  font-family: var(--pixel);
+  font-size: 32px;
+}
+
+/* --------------------------------------------------------------------------------------------- cierre */
+
+.d-cierre {
+  padding: 0;
+}
+
+.cierre-fondo {
+  position: absolute;
+  inset: 0;
+  image-rendering: pixelated;
+  background: url('/juego/victory_scene.png') 0 0 / 3840px 1080px no-repeat;
+}
+
+.cierre-texto {
+  position: absolute;
+  left: 96px;
+  top: 96px;
+  width: 980px;
+  padding: 48px 56px 52px;
+  background: color-mix(in srgb, var(--tinta) 86%, transparent);
+}
+
+.cierre-texto p {
+  margin-top: 28px;
+  font-size: 44px;
+}
+
+.cierre-gracias {
+  font-family: var(--pixel);
+  font-weight: 700;
+  color: var(--verde);
+  font-size: 60px !important;
+}
+
+/* ---------------------------------------------------------------------- banda «Pulso de la ciudad» */
+
+.pulso {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 150px;
+  padding: 14px 96px 0;
+  background: var(--asfalto);
+  border-top: 6px solid var(--concreto);
+  font-family: var(--pixel);
+  transition: height 0.6s var(--suave);
+}
+
+.pulso-portada {
+  height: 360px;
+}
+
+.pulso-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  font-size: 28px;
+  color: var(--niebla);
+}
+
+.pulso-dia {
+  margin-left: auto;
+  color: var(--ambar);
+  font-variant-numeric: tabular-nums;
+}
+
+.pulso-curva {
+  position: relative;
+  height: 54px;
+  margin-top: 6px;
+  transition: height 0.6s var(--suave);
+}
+
+.pulso-portada .pulso-curva {
+  height: 240px;
+}
+
+.pulso-portada .pulso-tenue {
+  opacity: 1;
+}
+
+.pulso-curva > svg,
+.pulso-recorrido svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1728px;
+  height: 100%;
+}
+
+.pulso-recorrido {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  transition: width 0.7s var(--suave);
+}
+
+.pulso-marcador {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 6px;
+  margin-left: -3px;
+  background: var(--blanco);
+  transition: left 0.7s var(--suave);
+}
+
+.pulso-secciones {
+  position: relative;
+  height: 40px;
+  margin-top: 4px;
+}
+
+.pulso-seccion {
+  position: absolute;
+  top: 0;
+  font-family: var(--pixel);
+  font-size: 28px;
+  color: var(--niebla);
+  background: none;
+  border: 0;
+  padding: 2px 8px 2px 0;
+  cursor: pointer;
+}
+
+.pulso-seccion:hover {
+  color: var(--blanco);
+}
+
+.pulso-seccion[aria-current='true'] {
+  color: var(--blanco);
+  font-weight: 700;
+}
+
+.pulso-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 24px;
+  color: var(--niebla);
+  font-variant-numeric: tabular-nums;
+}
+
+.pulso-nav button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--niebla);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.pulso-nav button:hover:not(:disabled) {
+  color: var(--blanco);
+}
+
+.pulso-nav button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.aviso-pausa {
+  position: absolute;
+  right: 96px;
+  top: 24px;
+  font-family: var(--pixel);
+  font-size: 28px;
+  color: var(--tinta);
+  background: var(--ambar);
+  padding: 4px 16px 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diapositiva {
+    animation: none;
+  }
+  .pulso,
+  .pulso-curva,
+  .pulso-recorrido,
+  .pulso-marcador {
+    transition: none;
+  }
+}
